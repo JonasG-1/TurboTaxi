@@ -1,6 +1,10 @@
 package Constants;
 
 public interface Protokoll {
+
+    String OK = "+OK";
+    String ERR = "-ERR";
+
     interface Client {
         String NAME = "NAME";
         String BEREIT = "BEREIT";

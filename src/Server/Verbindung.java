@@ -5,11 +5,14 @@ public class Verbindung {
     private String zIP;
     private int zPort;
     private String zName;
-    private Farbe zFarbe;
+    private boolean zIstAngemeldet;
+    private int zHighscore;
 
-    public Verbindung(String zIP, int zPort) {
-        this.zIP = zIP;
-        this.zPort = zPort;
+    public Verbindung(String pIP, int pPort) {
+        this.zIP = pIP;
+        this.zPort = pPort;
+        this.zName = null;
+
     }
 
     public String gibIP() {
@@ -24,16 +27,13 @@ public class Verbindung {
         return zName;
     }
 
-    public void setzeName(String zName) {
-        this.zName = zName;
+    public void setzeName(String pName) {
+        this.zName = pName;
+        zIstAngemeldet = true;
     }
 
-    public Farbe gibFarbe() {
-        return zFarbe;
-    }
-
-    public void setzeFarbe(Farbe zFarbe) {
-        this.zFarbe = zFarbe;
+    public boolean istAngemeldet() {
+        return zIstAngemeldet;
     }
 
     @Override

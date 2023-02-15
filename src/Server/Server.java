@@ -4,8 +4,8 @@ public class Server extends netzwerk.Server {
 
     private Controller zController;
 
-     public Server(int port, Controller pController) {
-          super(port);
+     public Server(int pPort, Controller pController) {
+          super(pPort);
           this.zController = pController;
      }
     @Override

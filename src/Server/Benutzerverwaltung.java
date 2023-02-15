@@ -12,12 +12,12 @@ public class Benutzerverwaltung {
         hatAnzahlVerbindungen = 0;
     }
 
-    public void verbindungHinzufuegen(Verbindung pVerbindung) {
+    public void fuegeVerbindungHinzu(Verbindung pVerbindung) {
         hatVerbindungen.append(pVerbindung);
         hatAnzahlVerbindungen++;
     }
 
-    public void verbindungEntfernen(Verbindung pVerbindung) {
+    public void entferneVerbindung(Verbindung pVerbindung) {
         hatVerbindungen.toFirst();
         boolean gefunden = false;
         while(hatVerbindungen.hasAccess() && !gefunden) {
