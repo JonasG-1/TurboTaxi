@@ -2,17 +2,22 @@ package Server;
 
 public class Verbindung {
 
-    private String zIP;
-    private int zPort;
+    private final String zIP;
+    private final int zPort;
     private String zName;
     private boolean zIstAngemeldet;
+    private boolean zBereit;
+    private boolean zImSpiel;
     private int zHighscore;
 
     public Verbindung(String pIP, int pPort) {
         this.zIP = pIP;
         this.zPort = pPort;
         this.zName = null;
-
+        this.zIstAngemeldet = false;
+        this.zBereit = false;
+        this.zImSpiel = false;
+        this.zHighscore = 0;
     }
 
     public String gibIP() {
@@ -34,6 +39,30 @@ public class Verbindung {
 
     public boolean istAngemeldet() {
         return zIstAngemeldet;
+    }
+
+    public boolean istBereit() {
+        return zBereit;
+    }
+
+    public void setzeBereit(boolean pBereit) {
+        zBereit = pBereit;
+    }
+
+    public boolean istImSpiel() {
+        return zImSpiel;
+    }
+
+    public void setzeImSpiel(boolean pImSpiel) {
+        zImSpiel = pImSpiel;
+    }
+
+    public int gibHighscore() {
+        return zHighscore;
+    }
+
+    public void setzeHighscore(int pHighscore) {
+        zHighscore = pHighscore;
     }
 
     @Override

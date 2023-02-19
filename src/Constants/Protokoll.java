@@ -4,6 +4,7 @@ public interface Protokoll {
 
     String OK = "+OK";
     String ERR = "-ERR";
+    String LEER = "";
 
     interface Client {
         String NAME = "NAME";
@@ -24,6 +25,13 @@ public interface Protokoll {
         String MATCHLISTE = "MATCHRANGLISTE";
     }
 
+    interface Debug {
+        String DEBUG = "[DEBUG]";
+        String INFO = "[INFO]";
+        String WARNUNG = "[WARN]";
+        String FEHLER = "[ERROR]";
+        String STRUKTUR = "%s %s:%s - %s%s";
 
+    }
 
 }
