@@ -24,15 +24,16 @@ public class Controller {
     }
 
     public void leseProtokollAus(String pNachricht, String pIP, int pPort) {
-
+        String lNachricht = verarbeiteNachricht(pNachricht, pIP, pPort);
+        hatServer.send(pIP, pPort, lNachricht);
     }
 
     private String verarbeiteNachricht(String pNachricht, String pIP, int pPort) {
-        String lAntwort = Protokoll.ERR + " Fehler bei der Verarbeitung der Nachricht.";
+        String lAntwort = "";
         String[] lNachrichtTeile = pNachricht.split(" ");
         switch (lNachrichtTeile[0]) {
             case Protokoll.Client.NAME:
-                lAntwort = verarbeiteAnmeldung(lNachrichtTeile[1], pIP, pPort);
+                lAntwort = verarbeiteAnmeldung(baueArray(lNachrichtTeile, 1), pIP, pPort);
                 break;
             case Protokoll.Client.BEREIT:
                 lAntwort = verarbeiteBereit(lNachrichtTeile[1], pIP, pPort);
@@ -67,7 +68,7 @@ public class Controller {
         return lAntwort;
     }
 
-    private String baueArrayZusammen(String[] pArray, int pStartIndex) {
+    private String baueArray(String[] pArray, int pStartIndex) {
         String lString = "";
         for (int i = pStartIndex; i < pArray.length; i++) {
             lString += pArray[i] + " ";
@@ -75,7 +76,7 @@ public class Controller {
         return lString;
     }
 
-    private String baueArrayZusammen(String[] pArray) {
-        return baueArrayZusammen(pArray, 0);
+    private String baueArray(String[] pArray) {
+        return baueArray(pArray, 0);
     }
 }
