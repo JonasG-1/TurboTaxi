@@ -15,6 +15,7 @@ public class Controller {
     private SpielVerwaltung hatSpielVerwaltung;
     private boolean zLaeuft;
     private int zCountdown;
+    private int zSpielMaximaleNr;
 
 
     public static void main(String[] args) {
@@ -27,7 +28,8 @@ public class Controller {
         hatDebugger = new Debugger(false, false, true);
         hatSpielVerwaltung = new SpielVerwaltung(this);
         zLaeuft = true;
-        zCountdown = 0;
+        zCountdown = 40;
+        zSpielMaximaleNr = 4;
         ScheduledExecutorService lExecutor = Executors.newSingleThreadScheduledExecutor();
         lExecutor.scheduleAtFixedRate(() -> {
             while (zLaeuft) {
@@ -197,14 +199,18 @@ public class Controller {
 
     private void pruefeSpiel() {
         if (hatSpielVerwaltung.istBeendet()) {
-            hatSpielVerwaltung = new SpielVerwaltung(this);
-            hatBenutzerverwaltung.setzeAlleBereit(false);
-            hatBenutzerverwaltung.setzeAlleImSpiel(false);
-            hatServer.sendToAll(
-                    "ANMERKUNG Alle Spieler, die mitspielen wollen, müssen sich jetzt auf BEREIT stellen."
-            );
-            zCountdown = 40;
-            hatDebugger.sendeInfo("Das Spiel ist beendet.", "Konsole", 0, Protokoll.LEER);
+            if (zSpielMaximaleNr >= hatSpielVerwaltung.gibRundenZahl()) {
+                hatSpielVerwaltung.starte();
+            } else {
+                hatSpielVerwaltung = new SpielVerwaltung(this);
+                hatBenutzerverwaltung.setzeAlleBereit(false);
+                hatBenutzerverwaltung.setzeAlleImSpiel(false);
+                hatServer.sendToAll(
+                        "ANMERKUNG Alle Spieler, die mitspielen wollen, müssen sich jetzt auf BEREIT stellen."
+                );
+                zCountdown = 40;
+                hatDebugger.sendeInfo("Das Spiel ist beendet.", "Konsole", 0, Protokoll.LEER);
+            }
         }
     }
 
@@ -215,7 +221,24 @@ public class Controller {
                 zCountdown--;
             } else {
                 hatSpielVerwaltung.starte();
+                hatBenutzerverwaltung.setzeAlleImSpielWennBereit(true);
             }
         }
+    }
+
+    private void sendeRundenliste() {
+        List<Verbindung> lBenutzer = hatBenutzerverwaltung.gibSpielende();
+        lBenutzer.toFirst();
+        List<String> lRundenliste = new List<>();
+        while (lBenutzer.hasAccess()) {
+            Verbindung lVerbindung = lBenutzer.getContent();
+            if (lVerbindung != null && lVerbindung.istAngemeldet() && lVerbindung.istImSpiel()) {
+                // TODO DAO
+                lRundenliste.append(String.format("(%s,%s,%s;)", lVerbindung.gibName(), lVerbindung.gibAktuelleZeit(),
+                        lVerbindung.gibAktuellePunkte()));
+            }
+            lBenutzer.next();
+        }
+        hatServer.sendToAll(Protokoll.Server.RUNDENLISTE + " " + lRundenliste);
     }
 }

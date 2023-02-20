@@ -3,7 +3,10 @@ package Server;
 public class SpielVerwaltung {
 
     Controller kenntController;
-
+    private int zRundenZahl;
+    private int zZeitInSekunden;
+    private boolean zGestartet;
+    private boolean zBeendet;
 
     public SpielVerwaltung(Controller pController) {
         this.kenntController = pController;

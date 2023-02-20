@@ -97,4 +97,14 @@ public class Benutzerverwaltung {
             hatVerbindungen.next();
         }
     }
+
+    public void setzeAlleImSpielWennBereit(boolean pImSpiel) {
+        hatVerbindungen.toFirst();
+        while (hatVerbindungen.hasAccess()) {
+            if (hatVerbindungen.getContent().istBereit()) {
+                hatVerbindungen.getContent().setzeImSpiel(pImSpiel);
+            }
+            hatVerbindungen.next();
+        }
+    }
 }
