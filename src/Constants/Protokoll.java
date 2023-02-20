@@ -23,6 +23,7 @@ public interface Protokoll {
         String RUNDENENDE = "RUNDENENDE";
         String RUNDENLISTE = "RUNDENRANGLISTE";
         String MATCHLISTE = "MATCHRANGLISTE";
+        String VERBINDUNG = "VERBINDUNG";
     }
 
     interface Debug {

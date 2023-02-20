@@ -57,4 +57,44 @@ public class Benutzerverwaltung {
         }
         return verbindung;
     }
+
+    public List<Verbindung> gibWartende() {
+        hatVerbindungen.toFirst();
+        List<Verbindung> lWartende = new List<>();
+        while (hatVerbindungen.hasAccess()) {
+           if (!hatVerbindungen.getContent().istImSpiel()) {
+               lWartende.append(hatVerbindungen.getContent());
+           }
+           hatVerbindungen.next();
+        }
+        return lWartende;
+    }
+
+    public List<Verbindung> gibSpielende() {
+        hatVerbindungen.toFirst();
+        List<Verbindung> lSpielende = new List<>();
+        while (hatVerbindungen.hasAccess()) {
+           if (hatVerbindungen.getContent().istImSpiel()) {
+               lSpielende.append(hatVerbindungen.getContent());
+           }
+           hatVerbindungen.next();
+        }
+        return lSpielende;
+    }
+
+    public void setzeAlleBereit(boolean pBereit) {
+        hatVerbindungen.toFirst();
+        while (hatVerbindungen.hasAccess()) {
+            hatVerbindungen.getContent().setzeBereit(pBereit);
+            hatVerbindungen.next();
+        }
+    }
+
+    public void setzeAlleImSpiel(boolean pImSpiel) {
+        hatVerbindungen.toFirst();
+        while (hatVerbindungen.hasAccess()) {
+            hatVerbindungen.getContent().setzeImSpiel(pImSpiel);
+            hatVerbindungen.next();
+        }
+    }
 }

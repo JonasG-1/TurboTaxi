@@ -1,12 +1,20 @@
 package Server;
 
 import Constants.Protokoll;
+import linearestrukturen.List;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Controller {
 
     private final Server hatServer;
     private final Benutzerverwaltung hatBenutzerverwaltung;
     private final Debugger hatDebugger;
+    private SpielVerwaltung hatSpielVerwaltung;
+    private boolean zLaeuft;
+    private int zCountdown;
 
 
     public static void main(String[] args) {
@@ -17,11 +25,24 @@ public class Controller {
         hatServer = new Server(1234, this);
         hatBenutzerverwaltung = new Benutzerverwaltung();
         hatDebugger = new Debugger(false, false, true);
+        hatSpielVerwaltung = new SpielVerwaltung(this);
+        zLaeuft = true;
+        zCountdown = 0;
+        ScheduledExecutorService lExecutor = Executors.newSingleThreadScheduledExecutor();
+        lExecutor.scheduleAtFixedRate(() -> {
+            while (zLaeuft) {
+                pruefeWartende();
+                pruefeSpiel();
+                pruefeCountdown();
+            }
+        }, 0, 1000, TimeUnit.MILLISECONDS);
     }
 
     public void neueVerbindung(String pIP, int pPort) {
         Verbindung verbindung = new Verbindung(pIP, pPort);
         hatBenutzerverwaltung.fuegeVerbindungHinzu(verbindung);
+        hatServer.send(pIP, pPort,
+                gibAntwort(true, Protokoll.Server.VERBINDUNG, pIP + ":" + pPort, Protokoll.LEER));
         hatDebugger.sendeInfo("Neue Verbindung.", pIP, pPort, Protokoll.LEER);
     }
 
@@ -59,7 +80,7 @@ public class Controller {
     private String verarbeiteAnmeldung(String pNachricht, String pIP, int pPort) {
         String lAntwort;
         if (pNachricht.equals(Protokoll.LEER)) {
-            pNachricht = "LEER";
+            pNachricht = Protokoll.LEER + "(LEER)";
         }
         Verbindung lVerbindung = hatBenutzerverwaltung.gibBenutzer(pIP, pPort);
         Verbindung lBenutzer = hatBenutzerverwaltung.gibBenutzer(pNachricht);
@@ -81,15 +102,18 @@ public class Controller {
     private String verarbeiteBereit(String pIP, int pPort) {
         String lAntwort;
         Verbindung lVerbindung = hatBenutzerverwaltung.gibBenutzer(pIP, pPort);
-        if (lVerbindung != null && lVerbindung.istAngemeldet()) {
+        if (lVerbindung != null && lVerbindung.istAngemeldet() && !hatSpielVerwaltung.istGestartet()) {
             lVerbindung.setzeBereit(true);
             lAntwort = gibAntwort(true, Protokoll.Client.BEREIT, lVerbindung.gibName(),
                     "Der Benutzer ist bereit.");
         } else {
             if (lVerbindung == null) {
                 lAntwort = gibAntwortKeineVerbindung(Protokoll.Client.BEREIT, pIP + ":" + pPort);
-            } else {
+            } else if (lVerbindung.istAngemeldet()) {
                 lAntwort = gibAntwortNichtAngemeldet(Protokoll.Client.BEREIT, pIP + ":" + pPort);
+            } else {
+                lAntwort = gibAntwort(false, Protokoll.Client.BEREIT, lVerbindung.gibName(),
+                        "Das Spiel wurde bereits gestartet.");
             }
         }
         return lAntwort;
@@ -100,6 +124,35 @@ public class Controller {
         hatDebugger.sendeWarnung("Fehlermeldung erhalten: " + pNachricht,
                 pIP, pPort, lVerbindung.istAngemeldet() ? lVerbindung.gibName() : Protokoll.LEER);
         return Protokoll.LEER;
+    }
+
+    private String verarbeiteFertig(String pNachricht, String pIP, int pPort) {
+        String lAntwort;
+        Verbindung lVerbindung = hatBenutzerverwaltung.gibBenutzer(pIP, pPort);
+        if (lVerbindung != null && lVerbindung.istAngemeldet() && lVerbindung.istImSpiel()) {
+            boolean lRichtig = hatSpielVerwaltung.ueberpruefeWeg(pNachricht);
+            lAntwort = gibAntwort(lRichtig, Protokoll.Client.FERTIG, pNachricht,
+                    lRichtig ? "Der Weg ist richtig." : "Der Weg ist falsch.");
+            if (lRichtig) {
+                verarbeiteRichtigenWeg(lVerbindung);
+            }
+        } else {
+            if (lVerbindung == null) {
+                lAntwort = gibAntwortKeineVerbindung(Protokoll.Client.FERTIG, pIP + ":" + pPort);
+            } else if (!lVerbindung.istAngemeldet()) {
+                lAntwort = gibAntwortNichtAngemeldet(Protokoll.Client.FERTIG, pIP + ":" + pPort);
+            } else {
+                lAntwort = gibAntwort(false, Protokoll.Client.FERTIG, pIP + ":" + pPort,
+                        "Der Benutzer nimmt nicht am Spiel teil.");
+            }
+        }
+        return lAntwort;
+    }
+
+    private void verarbeiteRichtigenWeg(Verbindung pVerbindung) {
+        int lRunde = hatSpielVerwaltung.gibRundenZahl();
+        int lZeit = hatSpielVerwaltung.gibZeitInSekunden();
+
     }
 
     private String gibAntwortNichtAngemeldet(String pBefehl, String pInhalt) {
@@ -129,5 +182,40 @@ public class Controller {
 
     private String baueArray(String[] pArray) {
         return baueArray(pArray, 0);
+    }
+
+    private void pruefeWartende() {
+        List<Verbindung> lWartende = hatBenutzerverwaltung.gibWartende();
+        lWartende.toFirst();
+        while (lWartende.hasAccess() && hatSpielVerwaltung.istGestartet()) {
+            Verbindung lVerbindung = lWartende.getContent();
+            hatServer.send(lVerbindung.gibIP(), lVerbindung.gibPort(), Protokoll.Server.WARTEN +
+                    " Du kannst dem Spiel gerade nicht beitreten.");
+            lWartende.next();
+        }
+    }
+
+    private void pruefeSpiel() {
+        if (hatSpielVerwaltung.istBeendet()) {
+            hatSpielVerwaltung = new SpielVerwaltung(this);
+            hatBenutzerverwaltung.setzeAlleBereit(false);
+            hatBenutzerverwaltung.setzeAlleImSpiel(false);
+            hatServer.sendToAll(
+                    "ANMERKUNG Alle Spieler, die mitspielen wollen, müssen sich jetzt auf BEREIT stellen."
+            );
+            zCountdown = 40;
+            hatDebugger.sendeInfo("Das Spiel ist beendet.", "Konsole", 0, Protokoll.LEER);
+        }
+    }
+
+    private void pruefeCountdown() {
+        if (!hatSpielVerwaltung.istGestartet()) {
+            if (zCountdown > 0) {
+                hatServer.sendToAll(Protokoll.Server.COUNTDOWN + " " + zCountdown);
+                zCountdown--;
+            } else {
+                hatSpielVerwaltung.starte();
+            }
+        }
     }
 }
