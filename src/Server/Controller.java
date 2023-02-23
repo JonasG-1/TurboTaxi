@@ -12,6 +12,7 @@ public class Controller {
     private final Server hatServer;
     private final Benutzerverwaltung hatBenutzerverwaltung;
     private final Debugger hatDebugger;
+    private final DAO hatDAO;
     private SpielVerwaltung hatSpielVerwaltung;
     private boolean zLaeuft;
     private int zCountdown;
@@ -27,6 +28,7 @@ public class Controller {
         hatBenutzerverwaltung = new Benutzerverwaltung();
         hatDebugger = new Debugger(false, false, true);
         hatSpielVerwaltung = new SpielVerwaltung(this);
+        hatDAO = new DAO("matchrangliste.ser");
         zLaeuft = true;
         zCountdown = 40;
         zSpielMaximaleNr = 4;
@@ -152,9 +154,21 @@ public class Controller {
     }
 
     private void verarbeiteRichtigenWeg(Verbindung pVerbindung) {
-        int lRunde = hatSpielVerwaltung.gibRundenZahl();
         int lZeit = hatSpielVerwaltung.gibZeitInSekunden();
-
+        int lRundenZeit = hatDAO.gibRundenZeit(pVerbindung);
+        int lGesamtZeit = hatDAO.gibGesamtZeit(pVerbindung);
+        int lRundenPunkte = hatDAO.gibRundenPunkte(pVerbindung);
+        int lGesamtPunkte = hatDAO.gibGesamtPunkte(pVerbindung);
+        int lRundenPunkteNeu = lRundenPunkte + 1;
+        int lGesamtPunkteNeu = lGesamtPunkte + 1;
+        if (lRundenZeit == -1 || lZeit < lRundenZeit) {
+            hatDAO.speichereRundenZeit(pVerbindung, lZeit);
+        }
+        if (lGesamtZeit == -1 || lZeit < lGesamtZeit) {
+           hatDAO.speichereGesamtZeit(pVerbindung, lZeit);
+        }
+        hatDAO.speichereRundenPunkte(pVerbindung, lRundenPunkteNeu);
+        hatDAO.speichereGesamtPunkte(pVerbindung, lGesamtPunkteNeu);
     }
 
     private String gibAntwortNichtAngemeldet(String pBefehl, String pInhalt) {
@@ -210,6 +224,7 @@ public class Controller {
                 );
                 zCountdown = 40;
                 hatDebugger.sendeInfo("Das Spiel ist beendet.", "Konsole", 0, Protokoll.LEER);
+                hatDAO.loescheRundenrangliste();
             }
         }
     }
@@ -226,19 +241,44 @@ public class Controller {
         }
     }
 
+    private void sendeListen() {
+        sendeRundenliste();
+        sendeGesamtliste();
+    }
+
     private void sendeRundenliste() {
         List<Verbindung> lBenutzer = hatBenutzerverwaltung.gibSpielende();
         lBenutzer.toFirst();
-        List<String> lRundenliste = new List<>();
+        StringBuilder lRundenliste = new StringBuilder();
         while (lBenutzer.hasAccess()) {
             Verbindung lVerbindung = lBenutzer.getContent();
             if (lVerbindung != null && lVerbindung.istAngemeldet() && lVerbindung.istImSpiel()) {
-                // TODO DAO
-                lRundenliste.append(String.format("(%s,%s,%s;)", lVerbindung.gibName(), lVerbindung.gibAktuelleZeit(),
-                        lVerbindung.gibAktuellePunkte()));
+                lRundenliste.append(String.format(
+                        "(%s,%s,%s;)", lVerbindung.gibName(),
+                        hatDAO.gibRundenZeit(lVerbindung),
+                        hatDAO.gibRundenPunkte(lVerbindung)
+                        ));
             }
             lBenutzer.next();
         }
         hatServer.sendToAll(Protokoll.Server.RUNDENLISTE + " " + lRundenliste);
+    }
+
+    private void sendeGesamtliste() {
+        List<Verbindung> lBenutzer = hatBenutzerverwaltung.gibSpielende();
+        lBenutzer.toFirst();
+        StringBuilder lGesamtliste = new StringBuilder();
+        while (lBenutzer.hasAccess()) {
+            Verbindung lVerbindung = lBenutzer.getContent();
+            if (lVerbindung != null && lVerbindung.istAngemeldet() && lVerbindung.istImSpiel()) {
+                lGesamtliste.append(String.format(
+                        "(%s,%s,%s;)", lVerbindung.gibName(),
+                        hatDAO.gibGesamtZeit(lVerbindung),
+                        hatDAO.gibGesamtPunkte(lVerbindung)
+                        ));
+            }
+            lBenutzer.next();
+        }
+        hatServer.sendToAll(Protokoll.Server.MATCHLISTE + " " + lGesamtliste);
     }
 }
