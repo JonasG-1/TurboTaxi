@@ -4,11 +4,11 @@ import linearestrukturen.List;
 
 public class Benutzerverwaltung {
 
-    private List<Verbindung> hatVerbindungen;
+    private final List<Verbindung> hatVerbindungen;
     private int hatAnzahlVerbindungen;
 
     public Benutzerverwaltung() {
-        hatVerbindungen = new List<Verbindung>();
+        hatVerbindungen = new List<>();
         hatAnzahlVerbindungen = 0;
     }
 
@@ -38,7 +38,8 @@ public class Benutzerverwaltung {
         hatVerbindungen.toFirst();
         Verbindung verbindung = null;
         while (hatVerbindungen.hasAccess()) {
-            if (hatVerbindungen.getContent().gibName().equals(pName)) {
+            String lName = hatVerbindungen.getContent().gibName();
+            if (lName != null && lName.equals(pName)) {
                 verbindung = hatVerbindungen.getContent();
             }
             hatVerbindungen.next();
@@ -62,7 +63,8 @@ public class Benutzerverwaltung {
         hatVerbindungen.toFirst();
         List<Verbindung> lWartende = new List<>();
         while (hatVerbindungen.hasAccess()) {
-           if (!hatVerbindungen.getContent().istImSpiel()) {
+            Verbindung lVerbindung = hatVerbindungen.getContent();
+           if (!lVerbindung.istImSpiel() && lVerbindung.istAngemeldet() && lVerbindung.istBereit()) {
                lWartende.append(hatVerbindungen.getContent());
            }
            hatVerbindungen.next();
