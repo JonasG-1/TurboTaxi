@@ -265,7 +265,6 @@ public class Controller {
                         "ANMERKUNG Alle Spieler, die mitspielen wollen, müssen sich jetzt auf BEREIT stellen."
                 );
                 zCountdown = zCountdownZuvor;
-                hatDebugger.sendeInfo("Das Spiel ist beendet.", "Konsole", 0, Protokoll.LEER);
                 hatDAO.loescheRundenrangliste();
             }
         }
@@ -343,7 +342,8 @@ public class Controller {
         lStatistik.append("Spielende: ").append(lBenutzer.length()).append(" Wartende: ").append(lBenutzer2.length())
                 .append("\nVerbindungen: ").append(lVerbindungen).append(" Spiel: ").append(lSpiel)
                 .append("\nSpielBeendet: ").append(lSpielBeendet).append(" Runde: ").append(lRunde)
-                .append("\nZeit: ").append(lZeit);
+                .append("\nZeit: ").append(lZeit).append(" Countdown: ").append(zCountdown)
+                .append("\nLäuft: ").append(zLaeuft);
         return lStatistik.toString();
     }
 }

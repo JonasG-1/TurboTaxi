@@ -10,6 +10,10 @@ public class SpielVerwaltung {
 
     public SpielVerwaltung(Controller pController) {
         this.kenntController = pController;
+        zRundenZahl = 0;
+        zZeitInSekunden = 0;
+        zGestartet = false;
+        zBeendet = false;
     }
 
     public boolean ueberpruefeWeg(String pProtokoll) {
@@ -17,22 +21,30 @@ public class SpielVerwaltung {
     }
 
     public int gibZeitInSekunden() {
-        return 0;
+        return zZeitInSekunden;
     }
 
     public int gibRundenZahl() {
-        return 0;
+        return zRundenZahl;
     }
 
     public boolean istGestartet() {
-        return false;
+        return zGestartet;
     }
 
     public boolean istBeendet() {
-        return false;
+        return zBeendet;
     }
 
     public void starte() {
+        zRundenZahl++;
+        if (!zBeendet) {
+            zGestartet = true;
+        }
+    }
 
+    public void beende() {
+        zBeendet = true;
+        zGestartet = false;
     }
 }
