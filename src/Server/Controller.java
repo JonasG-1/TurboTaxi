@@ -18,6 +18,7 @@ public class Controller {
     private int zCountdown;
     private final int zCountdownZuvor;
     private final int zSpielMaximaleNr;
+    private int zLetzeSpielerZahl;
 
 
     public static void main(String[] args) {
@@ -31,7 +32,7 @@ public class Controller {
         hatSpielVerwaltung = new SpielVerwaltung(this);
         hatDAO = new DAO("matchrangliste.ser");
         zLaeuft = true;
-        zCountdownZuvor = 40;
+        zCountdownZuvor = 10;
         zCountdown = zCountdownZuvor;
         zSpielMaximaleNr = 4;
         ScheduledExecutorService lExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -44,6 +45,7 @@ public class Controller {
             }
         }, 0, 1, TimeUnit.SECONDS);
         new Console(this);
+        zLetzeSpielerZahl = 0;
     }
 
     public void fuegeVerbindungHinzu(String pIP, int pPort) {
@@ -251,11 +253,17 @@ public class Controller {
 
     private void pruefeSpiel() {
         int lSpielende = hatBenutzerverwaltung.gibSpielende().length();
+        if (zLetzeSpielerZahl > lSpielende) {
+            zLetzeSpielerZahl = lSpielende;
+            sendeSpielerliste();
+        }
         if (hatSpielVerwaltung.istBeendet() || (hatSpielVerwaltung.istGestartet() && lSpielende < 2)) {
             sendeListen();
             if (lSpielende >= 2 && zSpielMaximaleNr >= hatSpielVerwaltung.gibRundenZahl()) {
                 hatDebugger.sendeInfo("Die nächste Runde beginnt.", "Konsole", 0, Protokoll.LEER);
                 hatSpielVerwaltung.starte();
+                sendeSpielerliste();
+                zLetzeSpielerZahl = lSpielende;
             } else {
                 hatDebugger.sendeInfo("Das Spiel wurde beendet.", "Konsole", 0, Protokoll.LEER);
                 hatSpielVerwaltung = new SpielVerwaltung(this);
@@ -266,8 +274,22 @@ public class Controller {
                 );
                 zCountdown = zCountdownZuvor;
                 hatDAO.loescheRundenrangliste();
+                zLetzeSpielerZahl = 0;
             }
         }
+    }
+
+    public void sendeSpielerliste() {
+        List<Verbindung> lSpieler = hatBenutzerverwaltung.gibSpielende();
+        lSpieler.toFirst();
+        StringBuilder lSpielerString = new StringBuilder();
+        while (lSpieler.hasAccess()) {
+            System.out.println("Spieler: " + lSpieler.getContent().gibName());
+            Verbindung lVerbindung = lSpieler.getContent();
+            lSpielerString.append("(").append(lVerbindung.gibName()).append(";)");
+            lSpieler.next();
+        }
+        hatServer.sendToAll(Protokoll.Server.SPIELERLISTE + " " + lSpielerString);
     }
 
     private void pruefeCountdown() {
@@ -280,8 +302,8 @@ public class Controller {
                 }
                 zCountdown--;
             } else {
-                hatSpielVerwaltung.starte();
                 hatBenutzerverwaltung.setzeAlleImSpielWennBereit(true);
+                hatSpielVerwaltung.starte();
                 hatDebugger.sendeInfo("Das Spiel beginnt.", "Konsole", 0, Protokoll.LEER);
             }
         } else {

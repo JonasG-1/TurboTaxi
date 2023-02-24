@@ -41,6 +41,7 @@ public class SpielVerwaltung {
         if (!zBeendet) {
             zGestartet = true;
         }
+        kenntController.sendeSpielerliste();
     }
 
     public void beende() {
